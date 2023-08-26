@@ -303,7 +303,12 @@ extern char *tc_set_value(tc_config *config, const char *key_name, const char *n
         size_t key_size   = strlen(key_name);
         size_t value_size = strlen(new_value);
 
-        char *new_line                = malloc(sizeof(char) * TC_CONFIG_DEFAULT_LINE_SIZE);
+        char *new_line = NULL;
+        if ((key_size + value_size) >= TC_CONFIG_DEFAULT_LINE_SIZE)
+            new_line = malloc(sizeof(char) * (TC_CONFIG_DEFAULT_LINE_SIZE + key_size + value_size));
+        else
+            new_line = malloc(sizeof(char) * TC_CONFIG_DEFAULT_LINE_SIZE);
+
         config->offsets[config->size] = key_size + 1;
 
         tc_str_copy_slice(key_name, 0, key_size - 1, new_line);
