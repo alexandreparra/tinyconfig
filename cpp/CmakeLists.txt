@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.25)
+project(tinyconfig_example CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+
+add_library(tinyconfig_cpp STATIC tinyconfig.cpp ../src/tinyconfig.c ../include/tinyconfig.h)
+target_include_directories(tinyconfig_cpp PRIVATE ../include)
+set_target_properties(tinyconfig_cpp PROPERTIES LINKER_LANGUAGE CXX)
