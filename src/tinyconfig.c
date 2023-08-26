@@ -96,7 +96,7 @@ static int open_file(FILE** fp, const char* file_path, const char* mode)
 {
 #ifdef _MSC_VER
     int err = fopen_s(fp, file_path, mode);
-    if (err) return -1;
+    if (err) return 1;
 #else
     *fp = fopen(file_path, mode);
 #endif
@@ -303,15 +303,14 @@ extern char *tc_set_value(tc_config *config, const char *key_name, const char *n
         size_t key_size   = strlen(key_name);
         size_t value_size = strlen(new_value);
 
-        config->lines[config->size] = malloc(sizeof(char) * (key_size + value_size + 2));
+        char *new_line                = malloc(sizeof(char) * TC_CONFIG_DEFAULT_LINE_SIZE);
         config->offsets[config->size] = key_size + 1;
-
-        char *new_line = config->lines[config->size];
 
         tc_str_copy_slice(key_name, 0, key_size - 1, new_line);
         new_line[key_size] = '=';
         tc_str_copy_slice_null(new_value, 0, value_size, new_line, key_size + 1);
 
+        config->lines[config->size] = new_line;
         config->size += 1;
         return &new_line[key_size + 1];
     }
@@ -349,7 +348,7 @@ extern int tc_save_to_file(tc_config *config, const char *file_path)
 
 extern void tc_free(tc_config *config)
 {
-    for (size_t i = 1; i != config->size; i++)
+    for (size_t i = 0; i < config->size; i++)
     {
         free(config->lines[i]);
     }
