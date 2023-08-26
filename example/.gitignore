@@ -1,0 +1,7 @@
+build/
+.cache/
+.idea/
+.vs/
+out/
+cmake-build-*
+example/out
