@@ -1,3 +1,12 @@
+## 2.0.0
+- Rewritten all internals of tinyconfig, now every line is saved inside the same buffer, making only one allocation per key-value.
+- Almost untouched interface (`tc_save_to_file` now returns an int instead of void).
+- Moved `tinyconfig.c` file to `src` directory.
+- Added 4 official types: raw strings, strings, integers and floats.
+- Clear distinction between what can be a key or value (because the lexer was way too simple on 1.0, even floats could be keys)
+- Keys can now only be raw strings or integers.
+- Improved coding consistency and style.
+
 ## 1.1.2
 - Fixed freeing the new config buffer on `tc_save_to_file` to work on every compiler.
 
