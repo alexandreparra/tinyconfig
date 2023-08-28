@@ -34,13 +34,6 @@ add_subdirectory(path_to_tinyconfig/)
 ```
 This will import the C tinyconfig library which is named `tinyconfig` on CMake.
 
-If you want to use the official C++ wrapper with CMake you can:
-```cmake
-add_subdirectory(path_to_tinyconfig/cpp/)
-```
-
-This will import the C++ tinyconfig wrapper which is named `tinyconfig_cpp` on CMake.
-
 **You can create your on wrappers easily too.**
 
 ### How to use
@@ -84,33 +77,6 @@ int main() {
     // Don't forget to free the config structure.
     tc_free(config);
 
-    return 0;
-}
-```
-#### C++
-tinyconfig comes with an official wrapper for C++
-
-```cpp
-#include <tinyconfig.h>
-
-int main() {
-    // This will be the same as the example above, the difference is that we access tinyconfig functions through the 
-    // 'tc' namespace.
-    tc::config config = NULL;        
-    int err = tc::load_config(&config, "tiny.conf");
-    /* .... */ 
-    
-    char *base_attack tc::get_value(config, "base_attack");
-    /* .... */
-    
-    char *player_dex = tc::set_value(config, "player_dex", "14"); 
-    /* .... */
-    
-    int err = tc::save_to_file(config, "modified.conf");
-    /* .... */
-    
-    tc::free(config); 
-    
     return 0;
 }
 ```
