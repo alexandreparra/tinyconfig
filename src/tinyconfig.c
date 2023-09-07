@@ -2,13 +2,13 @@
 // MIT License
 // tinyconfig.
 
-#include "../include/tinyconfig.h"
-
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <tinyconfig.h>
 
 // Modified #define names, originally from tinyxml2
 // https://github.com/leethomason/tinyxml2
