@@ -5,3 +5,4 @@ build/
 out/
 cmake-build-*
 example/out
+modified.conf

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -17,7 +18,7 @@ typedef struct {
     size_t capacity;
 } tc_config;
 
-extern int tc_load_config(tc_config **config, const char *file_path);
+extern bool tc_load_config(tc_config **config, const char *file_path);
 
 extern char *tc_get_value(tc_config *config, const char *key_name);
 

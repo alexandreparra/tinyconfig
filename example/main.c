@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -5,8 +6,8 @@
 
 int main() {
     tc_config *config = NULL;
-    int err = tc_load_config(&config, "tiny.conf");
-    if (err) {
+    bool ok = tc_load_config(&config, "tiny.conf");
+    if (!ok) {
         printf("Error loading config\n");
         return 1;
     }

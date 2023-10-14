@@ -92,31 +92,31 @@ static void tc_str_copy_slice(const char *source, size_t start, size_t end, char
         dest[i] = source[i+start];
 }
 
-static int open_file(FILE** fp, const char* file_path, const char* mode) 
+static bool open_file(FILE** fp, const char* file_path, const char* mode)
 {
 #ifdef _MSC_VER
     int err = fopen_s(fp, file_path, mode);
-    if (err) return 1;
+    if (err) return false;
 #else
     *fp = fopen(file_path, mode);
 #endif
 
-    if (fgetc(*fp) == EOF || ferror(*fp))
-        return 1;
+    if (*fp == NULL || fgetc(*fp) == EOF || ferror(*fp))
+        return false;
 
-    return 0;
+    return true;
 }
 
 //---------------------------------------------------------------------------
-// src.h
+// tinyconfig.h
 //---------------------------------------------------------------------------
 
-extern int tc_load_config(tc_config **config, const char *file_path)
+extern bool tc_load_config(tc_config **config, const char *file_path)
 {
     FILE *fp;
-    int err = open_file(&fp, file_path, "rb");
-    if (err)
-        return -1;
+    bool ok = open_file(&fp, file_path, "rb");
+    if (!ok)
+        return false;
 
     TC_FSEEK(fp, 0L, SEEK_END);
     size_t file_size = TC_FTELL(fp);
@@ -124,11 +124,11 @@ extern int tc_load_config(tc_config **config, const char *file_path)
 
     char *file_buffer = malloc(file_size + 1);
     if (!file_buffer)
-        return -1;
+        return false;
 
     size_t bytes_read = fread(file_buffer, sizeof(char), file_size, fp);
     if (bytes_read == 0)
-        return -1;
+        return false;
 
     file_buffer[bytes_read] = '\0';
 
@@ -199,9 +199,8 @@ extern int tc_load_config(tc_config **config, const char *file_path)
                     if ((value_size + key_size + 2) >= TC_CONFIG_DEFAULT_LINE_SIZE)
                     {
                         char *new_line = realloc(tmp_config->lines[line], TC_CONFIG_DEFAULT_LINE_SIZE * 2);
-                        if (new_line == NULL) 
-                            // TODO memory allocation error;
-                            return -1;
+                        if (new_line == NULL) goto file_buffer_error;
+                        tmp_config->lines[line] = new_line;
                     }
 
                     tc_str_copy_slice_null(
@@ -211,8 +210,6 @@ extern int tc_load_config(tc_config **config, const char *file_path)
                             tmp_config->lines[line],
                             key_size+2
                     );
-
-                    char *tt = tmp_config->lines[line];
 
                     line++;
                     reading_value = false;
@@ -240,10 +237,12 @@ extern int tc_load_config(tc_config **config, const char *file_path)
                     {
                         tmp_config->capacity += TC_CONFIG_DEFAULT_GROW_SIZE;
                         char *new_str_array = realloc(tmp_config->lines, tmp_config->capacity);
-                        if (new_str_array != NULL) *tmp_config->lines = new_str_array;
+                        if (new_str_array == NULL) goto file_buffer_error;
+                        *tmp_config->lines = new_str_array;
 
                         size_t *new_offsets = realloc(tmp_config->offsets, tmp_config->capacity);
-                        if (new_offsets != NULL) tmp_config->offsets = new_offsets;
+                        if (new_offsets == NULL) goto file_buffer_error;
+                        tmp_config->offsets = new_offsets;
                     }
 
                     if (key_size >= TC_CONFIG_DEFAULT_LINE_SIZE) 
@@ -268,7 +267,11 @@ extern int tc_load_config(tc_config **config, const char *file_path)
     tmp_config->size = line;
     *config = tmp_config;
 
-    return 0;
+    return true;
+
+file_buffer_error:
+    free(file_buffer);
+    return false;
 }
 
 extern char *tc_get_value(tc_config *config, const char *key)
