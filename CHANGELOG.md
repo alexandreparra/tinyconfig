@@ -1,3 +1,10 @@
+## 2.0.1
+- Address possible memory leak when memory allocations occur while parsing the file, if any reallocation fails the file_buffer is freed.
+- Change open_file return type to bool to be more cohesive.
+- Fix segfault on open_file function where `fgetc` would be called on a null pointer.
+- **BREAKING CHANGE** `tc_load_config` return type to bool to better follow open_file function and to not be so confusing (false is always error, true is always valid).
+- Change example to handle errors correctly to do an early return and avoid segfault.
+
 ## 2.0.0
 - Rewritten all internals of tinyconfig, now every line is saved inside the same buffer, making only one allocation per key-value.
 - Almost untouched interface (`tc_save_to_file` now returns an int instead of void).
