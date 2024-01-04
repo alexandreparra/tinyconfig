@@ -1,4 +1,4 @@
-// Copyright 2023 Alexandre Parra
+// Copyright 2023-2024 Alexandre Parra
 // MIT License
 // tinyconfig.
 
@@ -41,7 +41,7 @@
 
 #ifndef TC_CONFIG_DEFAULT_LINE_SIZE
     #define TC_CONFIG_DEFAULT_LINE_SIZE 50
-#endif 
+#endif
 
 //---------------------------------------------------------------------------
 // Static
@@ -72,10 +72,10 @@ static void tc_str_copy(const char *source, size_t source_size, char *dest)
 /// Copy a slice from start to end from source into dest 
 /// starting from start_from including a terminator character '\0'.
 static void tc_str_copy_slice_null(
-        const char *source, 
-        size_t start, 
-        size_t end, 
-        char *dest, 
+        const char *source,
+        size_t start,
+        size_t end,
+        char *dest,
         size_t start_from
 ) {
     size_t i;
@@ -107,6 +107,21 @@ static bool open_file(FILE** fp, const char* file_path, const char* mode)
     return true;
 }
 
+/// Finds the config value and return its position inside the config lines.
+/// Returns -1 if the value wasn't found.
+static int tc_get_value_position(tc_config *config, const char *key)
+{
+    for (size_t i = 0; i < config->size; i += 1)
+    {
+        if (tc_compare(key, config->offsets[i] - 1, config->lines[i]))
+        {
+            return (int) i;
+        }
+    }
+
+    return -1;
+}
+
 //---------------------------------------------------------------------------
 // tinyconfig.h
 //---------------------------------------------------------------------------
@@ -134,8 +149,6 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
 
     fclose(fp);
 
-    // TODO check for empty file
-
     tc_config *tmp_config = malloc(sizeof(tc_config));
 
 #ifndef DEBUG
@@ -161,12 +174,12 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
             case '\n':
             case ' ':
             case '\t': break;
-            case '#': 
+            case '#':
             {
                 while ((c = file_buffer[pos+1]) != '\n' || c == '\0') pos++;
                 break;
             }
-            case '=': 
+            case '=':
             {
                 reading_value = true;
                 break;
@@ -175,7 +188,7 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
             {
                 start_pos = pos;
 
-                if (reading_value) 
+                if (reading_value)
                 {
                     if (isalpha(c))
                     {
@@ -194,7 +207,7 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
                     }
 
                     size_t value_size = pos - start_pos;
-                     
+
                     // +2 for '=' and '\0'
                     if ((value_size + key_size + 2) >= TC_CONFIG_DEFAULT_LINE_SIZE)
                     {
@@ -214,7 +227,7 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
                     line++;
                     reading_value = false;
                 }
-                else 
+                else
                 {
                     if (isalpha(c))
                     {
@@ -224,7 +237,7 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
                     {
                         while (isdigit(c = file_buffer[pos+1])) pos++;
                     }
-                    else 
+                    else
                     {
                         // Invalid key, skip line.
                         while ((c = file_buffer[pos+1]) != '\n') pos++;
@@ -290,8 +303,8 @@ extern char *tc_get_value(tc_config *config, const char *key)
 
 extern char *tc_set_value(tc_config *config, const char *key_name, const char *new_value)
 {
-    char *line = tc_get_value(config, key_name);
-    if (line == NULL)
+    int line_position = tc_get_value_position(config, key_name);
+    if (line_position < 0)
     {
         if (config->size == config->capacity)
         {
@@ -323,18 +336,21 @@ extern char *tc_set_value(tc_config *config, const char *key_name, const char *n
         return &new_line[key_size + 1];
     }
 
-    size_t line_size  = strlen(line);
-    size_t value_size = strlen(new_value);
+    size_t line_size      = strlen(config->lines[line_position]);
+    size_t old_value_size = line_size - config->offsets[line_position];
+    size_t new_value_size = strlen(new_value);
+    size_t total_size     = (line_size - old_value_size) + new_value_size;
 
-    // + 20 is an arbitrary number so that we can force a reallocation instead of having out of bounds access.
-    if ((line_size + value_size + 20) >= TC_CONFIG_DEFAULT_LINE_SIZE)
+    if (total_size > TC_CONFIG_DEFAULT_LINE_SIZE)
     {
-        char *new_line = realloc(line, TC_CONFIG_DEFAULT_LINE_SIZE * 2);
-        if (new_line != NULL) line = new_line;
+        // +1 for the null terminator character \0
+        char * new_line = realloc(config->lines[line_position], total_size + 1);
+        if (new_line != NULL) config->lines[line_position] = new_line;
     }
 
-    tc_str_copy(new_value, value_size, line);
-    return line;
+    char * value_location = &config->lines[line_position][config->offsets[line_position]];
+    tc_str_copy(new_value, new_value_size, value_location);
+    return value_location;
 }
 
 extern int tc_save_to_file(tc_config *config, const char *file_path)
@@ -342,7 +358,7 @@ extern int tc_save_to_file(tc_config *config, const char *file_path)
     FILE* fp;
     int ok = open_file(&fp, file_path, "w");
     if (!ok)
-        return -1;   
+        return -1;
 
     for (size_t i = 0; i < config->size; i++)
     {
