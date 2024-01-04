@@ -1,3 +1,7 @@
+## 2.0.2
+- Changed reallocation strategy for `tc_set_value` if the new line size is bigger than the default line allocation size.
+- Fixed bug where `tc_save_to_file` would simply not write the configuration back to an empty file.
+
 ## 2.0.1
 - Address possible memory leak when memory allocations occur while parsing the file, if any reallocation fails the file_buffer is freed.
 - Change open_file return type to bool to be more cohesive.
