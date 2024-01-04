@@ -101,7 +101,7 @@ static bool open_file(FILE** fp, const char* file_path, const char* mode)
     *fp = fopen(file_path, mode);
 #endif
 
-    if (*fp == NULL || fgetc(*fp) == EOF || ferror(*fp))
+    if (*fp == NULL || ferror(*fp))
         return false;
 
     return true;
