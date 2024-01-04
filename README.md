@@ -101,13 +101,10 @@ they are naturally ignored by the lexer (described at [Lexer rules](#lexer-rules
 tinyconfig doesn't check for duplicates, which means that if you use `tc_get_value` with a key that is duplicated inside
 the config, it will return the first value it encounters inside the config.
 
-`tc_set_value` doesn't really know how much size a line has when it's going to change the value, most config keys and 
-values won't be that long and the default line size shouldn't be a problem, but if your lines have keys with 46 characters
-and values with 2-3 character, consider updating the `TC_CONFIG_DEFAULT_LINE_SIZE` to a bigger number to prevent access
-out of bounds problems.
-
 Even though the string type is provided, tinyconfig is best suited for small use cases, one could think of using it for
 translation, but there are better solutions specifically for that.
+
+Be careful while storing numbers, a big number may overflow.
 
 ### Valid types
 There are only 4 valid types that tinyconfig can work with.
