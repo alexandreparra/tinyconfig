@@ -1,3 +1,8 @@
+## 2.0.3
+- Fixed config reallocation failure (previously the `sizeof` types wasn't being considered to reallocate).
+- Add log macros and `TC_DEBUG_LOGS` macro to enable logs (works for release builds too).
+- Removed `TC_CONFIG_DEFAULT_GROW_SIZE` macro.
+
 ## 2.0.2
 - Changed reallocation strategy for `tc_set_value` if the new line size is bigger than the default line allocation size.
 - Fixed bug where `tc_save_to_file` would simply not write the configuration back to an empty file.
