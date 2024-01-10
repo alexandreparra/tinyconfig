@@ -35,12 +35,28 @@
     #define TC_CONFIG_DEFAULT_SIZE 20
 #endif
 
-#ifndef TC_CONFIG_DEFAULT_GROW_SIZE
-    #define TC_CONFIG_DEFAULT_GROW_SIZE 10
-#endif
-
 #ifndef TC_CONFIG_DEFAULT_LINE_SIZE
     #define TC_CONFIG_DEFAULT_LINE_SIZE 50
+#endif
+
+#ifdef TC_DEBUG_LOGS
+    #define DEBUG
+    #define DEBUG_PRINTLN(str, ...) printf("| %d %s | " str " |\n", __LINE__, __func__, ##__VA_ARGS__)
+    #define DEBUG_PRINT_CONFIG_STATUS(message, config) DEBUG_PRINTLN(message "| size %zi, capacity %zi", \
+            config->size,                                                                       \
+            config->capacity)
+    #define DEBUG_PRINT_MESSAGE_LINE(message, config, at) DEBUG_PRINTLN( \
+            message " | size %zi, capacity %zi, line[%zi] %s", \
+            config->size,                                             \
+            config->capacity,                                         \
+            at,                                                       \
+            config->lines[at])
+    #define DEBUG_PRINT_ADD_LINE(config, at) DEBUG_PRINTLN( \
+            "Config add line | size %zi, capacity %zi, line[%zi] %s", \
+            config->size,                                             \
+            config->capacity,                                         \
+            at,                                                       \
+            config->lines[at])
 #endif
 
 //---------------------------------------------------------------------------
@@ -122,6 +138,19 @@ static int tc_get_value_position(tc_config *config, const char *key)
     return -1;
 }
 
+inline static void realloc_config(tc_config * config) {
+    config->capacity += TC_CONFIG_DEFAULT_SIZE;
+    char ** new_str_array = realloc(config->lines, sizeof(char *) * config->capacity);
+    config->lines = new_str_array;
+
+    size_t * new_offsets = realloc(config->offsets, sizeof(size_t) * config->capacity);
+    config->offsets = new_offsets;
+
+#ifdef DEBUG
+    DEBUG_PRINT_CONFIG_STATUS("Realloced config", config);
+#endif
+}
+
 //---------------------------------------------------------------------------
 // tinyconfig.h
 //---------------------------------------------------------------------------
@@ -159,6 +188,7 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
     tmp_config->offsets = malloc(sizeof(size_t) * TC_CONFIG_DEFAULT_SIZE);
 #endif
     tmp_config->capacity = TC_CONFIG_DEFAULT_SIZE;
+    tmp_config->size     = 0;
 
     char c             = 0;
     size_t line        = 0;
@@ -225,6 +255,10 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
                     );
 
                     line++;
+#ifdef DEBUG
+                    DEBUG_PRINT_ADD_LINE(tmp_config, tmp_config->size);
+#endif
+                    tmp_config->size += 1;
                     reading_value = false;
                 }
                 else
@@ -248,14 +282,10 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
 
                     if (tmp_config->size == tmp_config->capacity)
                     {
-                        tmp_config->capacity += TC_CONFIG_DEFAULT_GROW_SIZE;
-                        char *new_str_array = realloc(tmp_config->lines, tmp_config->capacity);
-                        if (new_str_array == NULL) goto file_buffer_error;
-                        *tmp_config->lines = new_str_array;
-
-                        size_t *new_offsets = realloc(tmp_config->offsets, tmp_config->capacity);
-                        if (new_offsets == NULL) goto file_buffer_error;
-                        tmp_config->offsets = new_offsets;
+#ifdef DEBUG
+                        DEBUG_PRINTLN("REALLOC config size");
+#endif
+                        realloc_config(tmp_config);
                     }
 
                     if (key_size >= TC_CONFIG_DEFAULT_LINE_SIZE) 
@@ -277,7 +307,6 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
     }
 
     free(file_buffer);
-    tmp_config->size = line;
     *config = tmp_config;
 
     return true;
@@ -304,22 +333,20 @@ extern char *tc_get_value(tc_config *config, const char *key)
 extern char *tc_set_value(tc_config *config, const char *key_name, const char *new_value)
 {
     int line_position = tc_get_value_position(config, key_name);
-    if (line_position < 0)
+    if (line_position < 0) // Value wasn't found
     {
         if (config->size == config->capacity)
         {
-            config->capacity += TC_CONFIG_DEFAULT_GROW_SIZE;
-            char *new_str_array = realloc(config->lines, config->capacity);
-            if (new_str_array != NULL) *config->lines = new_str_array;
-
-            size_t *new_offsets = realloc(config->offsets, config->capacity);
-            if (new_offsets != NULL) config->offsets = new_offsets;
+#ifdef DEBUG
+            DEBUG_PRINTLN("REALLOC config");
+#endif
+            realloc_config(config);
         }
 
         size_t key_size   = strlen(key_name);
         size_t value_size = strlen(new_value);
 
-        char *new_line = NULL;
+        char * new_line = NULL;
         if ((key_size + value_size) >= TC_CONFIG_DEFAULT_LINE_SIZE)
             new_line = malloc(sizeof(char) * (TC_CONFIG_DEFAULT_LINE_SIZE + key_size + value_size));
         else
@@ -330,8 +357,11 @@ extern char *tc_set_value(tc_config *config, const char *key_name, const char *n
         tc_str_copy_slice(key_name, 0, key_size - 1, new_line);
         new_line[key_size] = '=';
         tc_str_copy_slice_null(new_value, 0, value_size, new_line, key_size + 1);
-
         config->lines[config->size] = new_line;
+
+#ifdef DEBUG
+        DEBUG_PRINT_ADD_LINE(config, config->size);
+#endif
         config->size += 1;
         return &new_line[key_size + 1];
     }
@@ -350,6 +380,12 @@ extern char *tc_set_value(tc_config *config, const char *key_name, const char *n
 
     char * value_location = &config->lines[line_position][config->offsets[line_position]];
     tc_str_copy(new_value, new_value_size, value_location);
+
+#ifdef DEBUG
+    size_t line_pos = (size_t) line_position;
+    DEBUG_PRINT_MESSAGE_LINE("Changed line value", config, line_pos);
+#endif
+
     return value_location;
 }
 
