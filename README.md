@@ -27,12 +27,13 @@ Tiny config is a simple header and source file that can be called from any
 build system easily, you can pull this repository or simply copy the source/header file from
 `src/tinyconfig.c` and `include/tinyconfig.h`.
 
-If you're using CMake, you can simply pull this repository inside your project and put inside your CMakeList.txt 
-file the following:
+If you're using CMake, you can simply pull this repository inside your project and configure your CMakeList.txt 
+file like the following:
 ```cmake
 add_subdirectory(path_to_tinyconfig/)
+target_link_libraries(your_executable tinyconfig)
+target_include_directories(your_executable path_to_tinyconfig/include/)
 ```
-This will import the C tinyconfig library which is named `tinyconfig` on CMake.
 
 **You can create your on wrappers easily too.**
 
@@ -82,17 +83,24 @@ int main() {
 ```
 
 ### Flags
-You can manually define the initial config allocation size, config grow size and line allocation size using your build system.
-This can be useful to avoid reallocation's, if your config has mostly known sizes do set these flags.
+You can manually define the initial config allocation size, line allocation size, (these can be useful 
+to avoid reallocation's if your config has a constant size, check `tinyconfig.c` for the default values) 
+and enable debug logs. 
 
-A CMake example:
+A CMake example that will change the value or just set the flags:
 ```cmake
 add_compile_definitions(TC_CONFIG_DEFAULT_SIZE=10)
-add_compile_definitions(TC_CONFIG_DEFAULT_GROW_SIZE=4)
 add_compile_definitions(TC_CONFIG_DEFAULT_LINE_SIZE=100)
+add_compile_definitions(TC_DEBUG_LOGS)
 ```
 
-This will overwrite the default values provided by tinyconfig.
+The available flags are:
+
+| Flag name                    | Description                                                                                |
+|------------------------------|--------------------------------------------------------------------------------------------|
+| TC_CONFIG_DEFAULT_SIZE       | The initial config array size used to store each line in the configuration file            |
+| TC_CONFIG_DEFAULT_LINE_SIZE  | The initial line buffer size used to store the key-value from the configuration file       |
+| TC_DEBUG_LOGS                | Activate logs that print debug information like reallocation, line added and config status |
 
 ### Caveats
 When using the function `tc_save_to_file`, all the comments and spaces present on the original file will vanish, because 
@@ -104,7 +112,7 @@ the config, it will return the first value it encounters inside the config.
 Even though the string type is provided, tinyconfig is best suited for small use cases, one could think of using it for
 translation, but there are better solutions specifically for that.
 
-Be careful while storing numbers, a big number may overflow.
+Be careful while storing numbers, a big number stored as a string may overflow when converted to an improper numeric type.
 
 ### Valid types
 There are only 4 valid types that tinyconfig can work with.
@@ -121,7 +129,7 @@ Examples: "string with spaces", "symbols: !@#$%", "1+1=2"
 
 Examples: -1, 0, 42, -50, 100.
 
-**Floats** are numbers that can contain a dot '.' to represent their decimal values, they can even start with a dot '.',
+**Floats** are numbers that can contain a dot '.' to represent their decimal values, they can start with a dot '.',
 can be negative or not.
 
 Examples: 10.5, 1.2, .556, -5.5
