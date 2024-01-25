@@ -74,5 +74,8 @@ int main(void) {
     const char * huge_str_2 = tc_get_value(config, "programsafety");
     TEST("tc_set_value change existing value with huge string (len > 100)", strcmp(huge_str_2, HUGE_STR) == 0);
 
+    // Free config.
+    tc_free(config);
+
     return 0;
 }
