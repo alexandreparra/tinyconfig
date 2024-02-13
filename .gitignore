@@ -1,7 +1,9 @@
-build/
 .cache/
 .idea/
 .vs/
+build/
 out/
 cmake-build-*
+compile_commands.json
+
 example/out
