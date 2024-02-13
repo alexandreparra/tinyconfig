@@ -40,10 +40,13 @@
 #endif
 
 #ifdef TC_DEBUG_LOGS
+    #include <time.h>
     #define DEBUG
     #define DEBUG_PRINTLN(str, ...) printf("| %d %s | " str " |\n", __LINE__, __func__, ##__VA_ARGS__)
-    #define DEBUG_PRINT_CONFIG_STATUS(message, config) DEBUG_PRINTLN(message "| size %zi, capacity %zi", \
-            config->size,                                                                       \
+
+    #define DEBUG_PRINT_CONFIG_STATUS(message, config) DEBUG_PRINTLN( \
+            message " | size %zi, capacity %zi", \
+            config->size,                        \
             config->capacity)
     #define DEBUG_PRINT_MESSAGE_LINE(message, config, at) DEBUG_PRINTLN( \
             message " | size %zi, capacity %zi, line[%zi] %s", \
@@ -64,7 +67,7 @@
 //---------------------------------------------------------------------------
 
 /// Compare a slice from start to end from the compared string with the base string.
-static bool tc_compare(const char *key, size_t key_end, const char *compared)
+static bool tc_str_compare(const char *key, size_t key_end, const char *compared)
 {
     size_t i;
     for (i = 0; i < key_end; i++)
@@ -129,7 +132,7 @@ static int tc_get_value_position(tc_config *config, const char *key)
 {
     for (size_t i = 0; i < config->size; i += 1)
     {
-        if (tc_compare(key, config->offsets[i] - 1, config->lines[i]))
+        if (tc_str_compare(key, config->offsets[i] - 1, config->lines[i]))
         {
             return (int) i;
         }
@@ -147,7 +150,7 @@ inline static void realloc_config(tc_config * config) {
     config->offsets = new_offsets;
 
 #ifdef DEBUG
-    DEBUG_PRINT_CONFIG_STATUS("Realloced config", config);
+    DEBUG_PRINT_CONFIG_STATUS("REALLOC config", config);
 #endif
 }
 
@@ -157,6 +160,10 @@ inline static void realloc_config(tc_config * config) {
 
 extern bool tc_load_config(tc_config **config, const char *file_path)
 {
+#ifdef DEBUG
+    double startTime = (double) clock() / CLOCKS_PER_SEC;
+#endif
+
     FILE *fp;
     bool ok = open_file(&fp, file_path, "rb");
     if (!ok)
@@ -309,6 +316,11 @@ extern bool tc_load_config(tc_config **config, const char *file_path)
     free(file_buffer);
     *config = tmp_config;
 
+#ifdef DEBUG
+    double elapsed = (double)clock() / CLOCKS_PER_SEC - startTime;
+    printf("Load config %s finished in: %f\n", file_path, elapsed);
+#endif
+
     return true;
 
 file_buffer_error:
@@ -320,7 +332,7 @@ extern char *tc_get_value(tc_config *config, const char *key)
 {
     for (size_t i = 0; i < config->size; i += 1)
     {
-        if (tc_compare(key, config->offsets[i] - 1, config->lines[i]))
+        if (tc_str_compare(key, config->offsets[i] - 1, config->lines[i]))
         {
             char *str = config->lines[i];
             return &str[config->offsets[i]];
