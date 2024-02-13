@@ -1,3 +1,7 @@
+## 2.0.4
+- Fixed debug logs spacing and phrasing for realloc log.
+- Added elapsed time info for `tc_load_config` function on DEBUG build.
+
 ## 2.0.3
 - Fixed config reallocation failure (previously the `sizeof` types wasn't being considered to reallocate).
 - Add log macros and `TC_DEBUG_LOGS` macro to enable logs (works for release builds too).
