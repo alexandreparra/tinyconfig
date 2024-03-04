@@ -4,8 +4,19 @@
 
 #include "../include/tinyconfig.h"
 
+// This shows how tinyconfig saves each key-value pair.
+void print_config(tc_config *config) {
+    for (size_t i = 0; i < config->size; i++) {
+        void *current_location = &config->buffer[TC_LINE_TOTAL_SIZE * i];
+        size_t *header_size = (size_t *) current_location;
+        printf("%zi ", *header_size);
+        char *line_location = (char *) current_location + TC_HEADER_SIZE;
+        printf("%s\n", line_location);
+    }
+}
+
 int main() {
-    tc_config *config = NULL;
+    tc_config config = {};
     bool ok = tc_load_config(&config, "tiny.conf");
     if (!ok) {
         printf("Error loading config\n");
@@ -13,36 +24,34 @@ int main() {
     }
 
     // More unsafe way
-    char *player_power = tc_get_value(config, "player_power");
+    char *player_power = tc_get_value(&config, "player_power");
     printf("player_power: %i\n", atoi(player_power));
 
     // Safer
-    char *player_int = tc_get_value(config, "base_attack");
+    char *player_int = tc_get_value(&config, "base_attack");
     if (player_int != NULL) {
         printf("base_attack: %f\n", atof(player_int));
     }
 
     // Negative values:
-    char *player_charisma = tc_get_value(config, "player_charisma");
+    char *player_charisma = tc_get_value(&config, "player_charisma");
     printf("player_charisma: %i kinda low...\n", atoi(player_charisma));
 
-    // String values are printed normally
-    char *player_destination = tc_get_value(config, "player_destination");
-    printf("palayer_destination: %s\n", player_destination);
+    // You can print every value as they are all null terminated strings.
+    char *player_destination = tc_get_value(&config, "player_destination");
+    printf("player_destination: %s\n", player_destination);
 
-    // Set a value to a certain key, if the value doesn't exist it'll be created.
-    // Even if the new value is created or just updated, tc_set_value will return the pointer to the value.
-    char *new_player_power = tc_set_value(config, "player_power", "330");
+    // Set a value to a certain an already existing key.
+    // Even if the new value is created or just updated,
+    // tc_set_value will return the pointer to the value.
+    char *new_player_power = tc_set_value(&config, "player_power", "330");
     printf("modified player_power: %i\n", atoi(new_player_power));
 
-    // Create a value that doesn't exist.
-    char *player_dex = tc_set_value(config, "player_dex", "50");
-    printf("new value player_dex: %i\n", atoi(player_dex));
-
     // Save the modifications back to a file.
-    tc_save_to_file(config, "modified.conf");
+    tc_save_to_file(&config, "modified.conf");
 
-    tc_free(config);
+    printf("\nConfig layout:\n");
+    print_config(&config);
 
     return 0;
 }
