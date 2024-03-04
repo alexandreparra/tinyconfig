@@ -3,8 +3,7 @@ project(tinyconfig_tests C)
 
 set(CMAKE_C_STANDARD 17)
 
-add_compile_definitions(TC_CONFIG_DEFAULT_SIZE=6)
-add_compile_definitions(TC_DEBUG_LOGS)
+add_compile_definitions(TC_CONFIG_MAX_SIZE=6)
 
 add_executable(tinyconfig_tests
     main.c 
