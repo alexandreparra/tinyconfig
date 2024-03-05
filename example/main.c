@@ -15,6 +15,13 @@ void print_config(tc_config *config) {
     }
 }
 
+// Example helper function to get data
+int get_int(tc_config *config, const char *key, int default_value) {
+    char *value = tc_get_value(config, key);
+    if (value == NULL) return default_value;
+    return atoi(value);
+}
+
 int main() {
     tc_config config = {};
     bool ok = tc_load_config(&config, "tiny.conf");
@@ -36,6 +43,10 @@ int main() {
     // Negative values:
     char *player_charisma = tc_get_value(&config, "player_charisma");
     printf("player_charisma: %i kinda low...\n", atoi(player_charisma));
+
+    // Use helper functions to get ints
+    int player_pow = get_int(&config, "player_power", 0);
+    printf("player_power with helper function: %i", player_pow);
 
     // You can print every value as they are all null terminated strings.
     char *player_destination = tc_get_value(&config, "player_destination");
