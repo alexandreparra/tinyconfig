@@ -150,6 +150,16 @@ internal void string_copy_slice(const char *source, size_t start, size_t end, ch
         target[i] = source[i+start];
 }
 
+/// Find and return the position where the value really ends ignoring spaces at the end.
+internal size_t string_trim_end(const char *source, size_t position)
+{
+    size_t value_end = position;
+    do {
+        if(source[value_end] != ' ') break;
+    } while(value_end--);
+    return value_end;
+}
+
 //---------------------------------------------------------------------------
 // Allocation
 //---------------------------------------------------------------------------
@@ -245,10 +255,11 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
 
                 char *key_start   = header_read(line_get(config, current_line));
                 char *value_start = &key_start[key_size + 2];
+                size_t trim_end_position = string_trim_end(file_buffer, pos);
                 string_copy_slice_null(
                     file_buffer,
                     start_pos,
-                    pos,
+                    trim_end_position,
                     value_start
                 );
 
