@@ -239,7 +239,11 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
                 }
                 else
                 {
-                    // TODO error reading value
+                    ERROR_REPORT("Invalid initial value character: %c at line %zi",
+                        file_buffer[start_pos],
+                        current_line
+                    );
+                    goto error;
                 }
 
                 size_t value_size = pos - start_pos;
@@ -251,6 +255,7 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
                         current_line,
                         TC_LINE_MAX_SIZE
                     );
+                    goto error;
                 }
 
                 char *key_start   = header_read(line_get(config, current_line));
