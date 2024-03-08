@@ -46,7 +46,7 @@ int main() {
 
     // Use helper functions to get ints
     int player_pow = get_int(&config, "player_power", 0);
-    printf("player_power with helper function: %i", player_pow);
+    printf("player_power with helper function: %i\n", player_pow);
 
     // You can print every value as they are all null terminated strings.
     char *player_destination = tc_get_value(&config, "player_destination");
