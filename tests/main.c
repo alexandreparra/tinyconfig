@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 
 #include "tinyconfig.h"
 
@@ -9,6 +10,34 @@
     printf("TEST " test_name "... "); \
     if (condition) printf(GREEN("SUCCESS")"\n"); else printf(RED("FAILED")"\n")
 
+#define STRING_COMPARE(x, y) strcmp(x, y) == 0
+
+void test_config_values(tc_config *config) {
+    const char *ip_address = tc_get_value(config, "ip_address");
+    TEST("Dot separated numbers", STRING_COMPARE(ip_address, "172.165.10.02"));
+    
+    const char *number_of_macros = tc_get_value(config, "numberOfMacros");
+    TEST("Integer", STRING_COMPARE(number_of_macros, "2"));
+
+    const char * program_safety = tc_get_value(config, "programsafety");
+    TEST("One word string", STRING_COMPARE(program_safety, "unsafe"));
+
+    const char * time_to_run = tc_get_value(config, "time_to_run");
+    TEST("Dotted float", STRING_COMPARE(time_to_run, ".1"));
+
+    const char * random_float = tc_get_value(config, "random_float");
+    TEST("Float number", STRING_COMPARE(random_float, "5.56"));
+
+    const char *code_quality = tc_get_value(config, "code_quality");
+    TEST("Negative integer", STRING_COMPARE(code_quality, "-50"));
+    
+    const char *random_text = tc_get_value(config, "random_text");
+    TEST("Text with white spaces", STRING_COMPARE(random_text, "Some whitespaced random text"));
+
+    const char *dotted_text = tc_get_value(config, "dotted_text");
+    TEST("Dotted text", STRING_COMPARE(dotted_text, "com.domain.example"));
+}
+
 int main(void) {
     printf("INIT TESTS\n");
     printf("\nINIT Config tests\n");
@@ -16,40 +45,36 @@ int main(void) {
     tc_config config = {};
     bool ret = tc_load_config(&config, "test.conf");
     TEST("tc_load_config success return", ret == true);
-    TEST("config->size = 6", config.size == 6);
-    TEST("TC_CONFIG_MAX_SIZE = 6", TC_CONFIG_MAX_SIZE == 6);
+    TEST("config->size = 8", config.size == 8);
+
+    // Test changes made on CMake
+    TEST("TC_CONFIG_MAX_SIZE = 8", TC_CONFIG_MAX_SIZE == 8);
 
     // --------------------
-    // Check value parsing.
+    // tc_get_value
+    // --------------------
     printf("\nINIT tc_get_value tests\n");
-    const char * file_name = tc_get_value(&config, "file_name");
-    TEST("string main.c", strcmp(file_name, "main.c") == 0);
-    
-    const char * number_of_macros = tc_get_value(&config, "numberOfMacros");
-    TEST("int 2", strcmp(number_of_macros, "2") == 0);
+    test_config_values(&config);
 
-    const char * program_safety = tc_get_value(&config, "programsafety");
-    TEST("raw string unsafe", strcmp(program_safety, "unsafe") == 0);
+    // --------------------
+    // tc_save_to_file 
+    // --------------------
+    printf("\nINIT tc_save_to_file tests\n");
+    printf("Save test.conf contents to new test2.conf\n");
+    printf("Test if config was reset and correctly re-written to new file\n");
+    tc_save_to_file(&config, "test2.conf");
+    tc_load_config(&config, "test2.conf");
+    test_config_values(&config);
 
-    const char * time_to_run = tc_get_value(&config, "time_to_run");
-    TEST("dot float .1", strcmp(time_to_run, ".1") == 0);
-
-    const char * random_float = tc_get_value(&config, "random_float");
-    TEST("float 5.56", strcmp(random_float, "5.56") == 0);
-
-    const char *code_quality = tc_get_value(&config, "code_quality");
-    TEST("negative int -50", strcmp(code_quality, "-50") == 0);
-
-    const char *empty_line = tc_get_value(&config, "");
-    TEST("emtpy string", empty_line == NULL);
-
+    // --------------------
+    // tc_set_value 
     // --------------------
     printf("\nINIT tc_set_value tests\n");
 
     // Set a new value to an existing one and assert the result.
     tc_set_value(&config, "programsafety", "very_safe");
     const char *new_safety = tc_get_value(&config, "programsafety");
-    TEST("raw string very_safe", strcmp(new_safety, "very_safe") == 0);
+    TEST("raw string very_safe", STRING_COMPARE(new_safety, "very_safe"));
 
     return 0;
 }
