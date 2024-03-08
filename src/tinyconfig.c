@@ -16,9 +16,23 @@
     Different usages comes with different drawbacks, but in general, read only files are the most
     useful.
 
+Lexer:
+    tinyconfig has a simple lexer, basically we have:
+    - Line comments.
+    - Numbers in the form of ints and floats.
+    - Strings, which can be underscore '_' separated for keys or normal space separated strings for 
+      values.
+    
+    Keys are case-sensitive, if you create two keys like the following: `SomeKey` and `somekey`
+    tinyconfig is able to distinguish between them.
+    
+    Values need to start with an alphanumeric character, all other special characters are accepted
+    inside the value until a new line is found. Basically this is valid '123&' but this is not
+    '&123'.
+
 Memory model:
-    tinyconfig uses a static allocation to store values. It saves the whole line from the configuration
-    file alongside a header:
+    tinyconfig uses a static allocation to store values. It saves the whole line from the 
+    configuration file alongside a header:
 
     header            line
     |-----------------|-------------------------------------|
@@ -66,24 +80,15 @@ Hot reload:
    || defined(__NetBSD__) || defined(__DragonFly__) || (__CYGWIN__)
     #define TC_FSEEK fseeko
 	#define TC_FTELL ftello
-#elif defined(__ANDROID__)
-    #if __ANDROID_API__ > 24
-        #define TC_FSEEK fseeko64
-        #define TC_FTELL ftello64
-    #else
-        #define TC_FSEEK fseeko
-        #define TC_FTELL ftello
-    #endif
 #else
 	#define TC_FSEEK fseek
 	#define TC_FTELL ftell
 #endif
 
-#define REPORT_ERROR(string, args...) fprintf(    \
-    stderr,                                       \
-    "\033[0;31m tinyconfig: " string "\033[0m\n", \
-    args                                          \
-)
+#define ERROR_REPORT(string, args...) fprintf(        \
+        stderr,                                       \
+        "\033[0;31m tinyconfig: " string "\033[0m\n", \
+        args)
 
 //---------------------------------------------------------------------------
 // Util
@@ -161,14 +166,14 @@ internal size_t line_offset_get(tc_config *config, size_t index)
     return *((size_t *) line_get(config, index));
 }
 
-internal void write_header(void *location, size_t key_value_offset)
+internal void header_write(void *location, size_t key_value_offset)
 {
     assert(location != NULL);
     size_t *header = location;
     *header = key_value_offset;
 }
 
-internal char *read_header(void *location)
+internal char *header_read(void *location)
 {
     assert(location != NULL);
     void *key_start = (char *) location + TC_HEADER_SIZE;
@@ -178,14 +183,6 @@ internal char *read_header(void *location)
 //---------------------------------------------------------------------------
 // Lexer
 //---------------------------------------------------------------------------
-
-internal size_t read_raw_string(const char *file_buffer, size_t current_position)
-{
-    char c          = 0;
-    size_t position = current_position;
-    while ((c = file_buffer[position+1]) == '_' || isalpha(c)) position++;
-    return position;
-}
 
 internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_bytes_read)
 {
@@ -221,20 +218,18 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
 
             if (reading_value)
             {
-                if (isalpha(c))
+                if (isalpha(c) || isdigit(c) || c == '-' || c == '.')
                 {
-                    pos = read_raw_string(file_buffer, pos);
+                    for (;;)
+                    {
+                        c = file_buffer[pos+1];
+                        if (c == '\r' || c == '\n' || c == '\0' || c == '#') break;
+                        pos++;
+                    }
                 }
-                else if (c == '"')
+                else
                 {
-                    while ((c = file_buffer[pos+1]) != '"') pos++;
-
-                    // Skip the first "
-                    start_pos += 1;
-                }
-                else if (isdigit(c) || c == '-' ||c == '.')
-                {
-                    while ((c = file_buffer[pos+1]) == '.' || isdigit(c)) pos++;
+                    // TODO error reading value
                 }
 
                 size_t value_size = pos - start_pos;
@@ -242,14 +237,13 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
                 // +2 for '=' and '\0'
                 if ((value_size + key_size + 2) >= TC_LINE_MAX_SIZE)
                 {
-                    REPORT_ERROR(
-                        "value at line %zi overflows default TC_LINE_MAX_SIZE (%i)",
+                    ERROR_REPORT("value at line %zi overflows default TC_LINE_MAX_SIZE (%i)",
                         current_line,
                         TC_LINE_MAX_SIZE
                     );
                 }
 
-                char *key_start   = read_header(line_get(config, current_line));
+                char *key_start   = header_read(line_get(config, current_line));
                 char *value_start = &key_start[key_size + 2];
                 string_copy_slice_null(
                     file_buffer,
@@ -266,24 +260,24 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
             {
                 if (isalpha(c))
                 {
-                    pos = read_raw_string(file_buffer, pos);
-                }
-                else if (isdigit(c))
-                {
-                    while (isdigit(c = file_buffer[pos+1])) pos++;
+                    while (isalpha((c = file_buffer[pos+1])) || c == '_') pos++;
                 }
                 else
                 {
                     // Invalid key, skip current_line.
                     while ((c = file_buffer[pos+1]) != '\n') pos++;
-                    continue;
+                    ERROR_REPORT(
+                        "key at line %zi starts with illegal character",
+                        current_line
+                    );
+                    goto error;
                 }
 
                 key_size = (pos - start_pos);
 
                 if (config->size == TC_CONFIG_MAX_SIZE)
                 {
-                    REPORT_ERROR(
+                    ERROR_REPORT(
                         "key at line %zi overflows default TC_LINE_MAX_SIZE (%i)",
                         current_line,
                         TC_CONFIG_MAX_SIZE
@@ -293,7 +287,7 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
 
                 if (key_size >= TC_LINE_MAX_SIZE)
                 {
-                    REPORT_ERROR(
+                    ERROR_REPORT(
                         "amount of lines exceeds TC_CONFIG_MAX_SIZE (%i)",
                         TC_LINE_MAX_SIZE
                     );
@@ -302,10 +296,10 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
 
                 void *current_location = line_get(config, current_line);
                 // + 2 to land correctly on the start of the value, just after the = sign.
-                write_header(current_location, key_size + 2);
+                header_write(current_location, key_size + 2);
                 assert( *((size_t *) current_location) == key_size + 2);
 
-                void *key_location = read_header(current_location);
+                void *key_location = header_read(current_location);
                 string_copy_slice(file_buffer, start_pos, pos, key_location);
 
                 char *key = (char *) key_location;
@@ -328,6 +322,12 @@ error:
 //---------------------------------------------------------------------------
 // tinyconfig.h
 //---------------------------------------------------------------------------
+
+// TODO test memory alignment
+typedef struct {
+    size_t offset;
+    char   line[TC_LINE_MAX_SIZE];
+} tc_config_line;
 
 internal void *buffer[TC_CONFIG_MAX_SIZE * TC_LINE_TOTAL_SIZE] = {0};
 
@@ -362,13 +362,11 @@ extern bool tc_load_config(tc_config *config, const char *file_path)
     }
 
     file_buffer[bytes_read] = '\0';
-
     fclose(file);
 
-    config->buffer    = buffer;
-    config->size      = 0;
-
-    bool success = tc_parse_config(config, file_buffer, bytes_read);
+    config->buffer = buffer;
+    config->size   = 0;
+    bool success   = tc_parse_config(config, file_buffer, bytes_read);
 #ifndef NDEBUG
     double elapsed = (double)clock() / CLOCKS_PER_SEC - startTime;
     printf("tinyconfig: load config time: %f seconds\n", elapsed);
@@ -383,7 +381,7 @@ extern char *tc_get_value(tc_config *config, const char *key)
     for (size_t i = 0; i < config->size; i += 1)
     {
         size_t offset = line_offset_get(config, i);
-        char *key_start = read_header(line_get(config, i));
+        char *key_start = header_read(line_get(config, i));
         if (key_compare(key, offset - 1, key_start))
         {
             return &key_start[offset];
@@ -398,7 +396,11 @@ extern char *tc_get_value(tc_config *config, const char *key)
 extern void *tc_set_value(tc_config *config, char *key, char *new_value)
 {
     size_t new_value_length = strlen(new_value);
+    assert(new_value_length > 0);
+
     size_t key_length = strlen(key);
+    assert(key_length > 0);
+
     // +2 for '=' and '\0'
     if ((key_length + new_value_length + 2) > TC_LINE_MAX_SIZE)
     {
@@ -408,7 +410,7 @@ extern void *tc_set_value(tc_config *config, char *key, char *new_value)
     for (size_t i = 0; i < config->size; i += 1)
     {
         size_t offset = line_offset_get(config, i);
-        char *key_start = read_header(line_get(config, i));
+        char *key_start = header_read(line_get(config, i));
         if (key_compare(key, offset - 1, key_start))
         {
             char *value_start = &key_start[offset];
@@ -434,7 +436,7 @@ extern bool tc_save_to_file(tc_config *config, const char *file_path)
 
     for (size_t i = 0; i < config->size; i++)
     {
-        char *key_start = read_header(line_get(config, i));
+        char *key_start = header_read(line_get(config, i));
         fprintf(file, "%s\n", key_start);
     }
 
