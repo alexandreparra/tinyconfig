@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 #ifndef TC_LINE_MAX_SIZE
-#define TC_LINE_MAX_SIZE 50
+#define TC_LINE_MAX_SIZE 64
 #endif
 
 #define TC_HEADER_SIZE sizeof(size_t)
@@ -28,7 +28,6 @@ typedef struct {
     void      *buffer;
     size_t     size;
 } tc_config;
-
 extern bool tc_load_config(tc_config *config, const char *file_path);
 extern char *tc_get_value(tc_config *config, const char *key_name);
 extern void *tc_set_value(tc_config *config, char *key, char *new_value);

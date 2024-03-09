@@ -339,12 +339,6 @@ error:
 // tinyconfig.h
 //---------------------------------------------------------------------------
 
-// TODO test memory alignment
-typedef struct {
-    size_t offset;
-    char   line[TC_LINE_MAX_SIZE];
-} tc_config_line;
-
 internal void *buffer[TC_CONFIG_MAX_SIZE * TC_LINE_TOTAL_SIZE] = {0};
 
 extern bool tc_load_config(tc_config *config, const char *file_path)
