@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../include/tinyconfig.h"
 
@@ -13,6 +14,15 @@ void print_config(tc_config *config) {
         char *line_location = (char *) current_location + TC_HEADER_SIZE;
         printf("%s\n", line_location);
     }
+}
+
+// Example helper function to parse a boolean value.
+bool parse_boolean(char *source) {
+    if (strcmp(source, "true") == 0) return true;
+    if (strcmp(source, "false") == 0) return false;
+
+    // This may not be the best approach, but defaulting to false is probably safer.
+    return false;
 }
 
 // Example helper function to get data
@@ -51,6 +61,10 @@ int main() {
     // You can print every value as they are all null terminated strings.
     char *player_destination = tc_get_value(&config, "player_destination");
     printf("player_destination: %s\n", player_destination);
+
+    char *boolean_example = tc_get_value(&config, "boolean_example");
+    bool parsed_bool = parse_boolean(boolean_example);
+    // Do whatever with parsed_bool
 
     // Set a value to a certain an already existing key.
     // Even if the new value is created or just updated,
