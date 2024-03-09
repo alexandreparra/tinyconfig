@@ -3,32 +3,37 @@
 // tinyconfig.
 
 /*
-    tinyconfig was created to solve most common usages of configuration files, with only 4 functions
-    and one struct, it can be used in many scenarios, for example:
-      1. As a read only configuration file for servers. You may want to document what each key=value
-    pair actually do and their default values. In a read only configuration you can comment as much
-    as you need and tinyconfig will maintain your program structure unchanged.
-      2. As a dynamic configuration file that can read and update the file. For example, if you
-    have a game that sets the window height and width by reading a file, and also provides settings
-    so that the player change the resolution while playing, you can update the value on the config
-    struct and save them back to the files. Notice that this removes all comments.
+    tinyconfig is a minimal, yet flexibility configuration file specification, that strives to solve
+    most common use cases. With only 4 public function and one struct, it can be used in many
+    scenarios, for example:
+      1. As a read only configuration file. You can put a comment above all key-value pairs to
+      describe what each line does, what values are accepted and its default value.
+      2. As a dynamic configuration file that can read and updated. For example, if you have a game
+      that sets the window height and width by reading a file at initialization, and also provides
+      settings so that the player change the resolution while playing, you can update the value at
+      runtime and save everything back to the file. Notice that this removes all comments.
 
-    Different usages comes with different drawbacks, but in general, read only files are the most
-    useful.
+    For most use cases, read only files should suffice.
 
 Lexer:
-    tinyconfig has a simple lexer, basically we have:
+    tinyconfig has a simple lexer that understands:
     - Line comments.
-    - Numbers in the form of ints and floats.
-    - Strings, which can be underscore '_' separated for keys or normal space separated strings for 
-      values.
-    
+    - Keys that can be string separated by an underscore
+    - Values that can be any valid string type, containing whitespaces or not, numbers and special
+      characters too.
+
     Keys are case-sensitive, if you create two keys like the following: `SomeKey` and `somekey`
     tinyconfig is able to distinguish between them.
     
-    Values need to start with an alphanumeric character, all other special characters are accepted
-    inside the value until a new line is found. Basically this is valid '123&' but this is not
-    '&123'.
+    tinyconfig doesn't assume any types from the values, they are all treated as pure strings. This
+    has many advantages, for example, you can treat booleans just as a simple 't' and 'f' (like some
+    lisp flavors do). This also means that you need to bring your own methods of conversion for all
+    types you want to use.
+
+    Semicolons aren't sanitized, its highly advised that you don't blindly read values and issue
+    commands on the terminal without prior sanitization. In general tinyconfig is optimal for simple
+    variables that are used directly in your program, like an ip address, window sizes or a simple
+    flag, don't try to meta-program (at least not in a serious program) a config file.
 
 Memory model:
     tinyconfig uses a static allocation to store values. It saves the whole line from the 
@@ -48,8 +53,9 @@ Memory model:
 Hot reload:
     You can easily achieve hot reload in tinyconfig by running tc_load_config again. Two simple
     methods to implement hot reload are:
-      1. Check the file stat every time and use tc_load_config to reload the configurations.
-      2. Create a custom command to reload the file on demand.
+      1. Check the file stat every time and use tc_load_config to reload once a file has changed.
+      2. Create a custom command to reload the file on demand, for example, if you have something
+      like a REPL or a debug GUI that calls tc_load_config again.
 */
 
 #include <assert.h>
