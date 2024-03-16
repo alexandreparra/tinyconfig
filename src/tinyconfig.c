@@ -202,6 +202,7 @@ internal char *header_read(void *location)
 
 internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_bytes_read)
 {
+    assert(config->buffer != NULL);
     assert(file_bytes_read > 0);
 
     char c              = 0;
@@ -386,6 +387,7 @@ extern bool tc_load_config(tc_config *config, const char *file_path)
 #ifndef NDEBUG
     double elapsed = (double)clock() / CLOCKS_PER_SEC - startTime;
     printf("tinyconfig: load config time: %f seconds\n", elapsed);
+    printf("tinyconfig: configuration buffer size: %zi bytes\n", TC_CONFIG_MAX_SIZE * TC_LINE_TOTAL_SIZE);
 #endif
 
     return success;
