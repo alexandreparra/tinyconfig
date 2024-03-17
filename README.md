@@ -9,7 +9,7 @@ size is predictable and can be altered (see [Flags](#flags)) for maximum efficie
 
 The library name was inspired by [tinyxml2](https://github.com/leethomason/tinyxml2)
 
-A simple config example:
+## Simple example
 ```txt
 # This is a line comment
 project_name=tinyconfig
@@ -26,9 +26,9 @@ domain_name = com.example.domain
 ```
 
 ### Using tinyconfig on your project
-Tiny config is a simple header and source file that can be called from any
-build system easily, you can pull this repository inside your project or simply copy the source/header 
-file from `src/tinyconfig.c` and `include/tinyconfig.h`.
+tinyconfig is a simple header and source file that can be included on any build system easily, or
+just copied inside your project via download or just cloning this repository inside your project.
+The two files you'll are `src/tinyconfig.c` and `include/tinyconfig.h`.
 
 If you're using CMake, you can simply pull this repository inside your project and configure your 
 CMakeList.txt 
@@ -64,7 +64,7 @@ The available flags are:
 
 ### Caveats
 When using the function `tc_save_to_file`, all the comments and spaces present on the original file 
-will vanish, because they are naturally ignored by the lexer (described at [Lexer rules](#Lexer)).
+will vanish, as they are naturally ignored by the lexer (described at [Lexer rules](#Lexer)).
 
 tinyconfig doesn't check for duplicates, which means that if you use `tc_get_value` with a key that 
 is duplicated inside the config, it will return the first value encountered.
@@ -76,20 +76,22 @@ improper numeric type.
 Each key-value pair is evaluated by line, one line means one key and one value, the delimiter to 
 define what is a key and what is a value, is the equal sign '='.
 
-**Keys** can be underscore separated strings like: `some_key`, `SomeKey` and are case-sensitive.
+**Keys** can be underscore separated strings like: `some_key`, or normal non-spaced strings like:
+`SomeKey`. Keys are **case-sensitive**.
 
-**Values** can start with any alphanumeric character, dot '.', or hyphen '-', making value very 
-flexible, you can visualize some of them as:
+**Values** can start with any alphanumeric character, dot '.', or hyphen '-', some examples:
 - Integers: `1`, `100`, `-5`.
 - Floats: `5.56`, `.5`, `-10.2`
 - Strings: `Some string`, `my.domain.example`, `underscore_separated`
 
-But as long as they start with any of the characters describe, everything inside the value is 
-permitted.
+After reading the first valid character on the value, tinyconfig accepts any symbols, spaces, and
+all valid characters until it finds an end of line '\n' or end of file (EOF). 
+
+Whitespaces at the beginning and end are trimmed out of the value.
 
 **Comments:**
 - A # represents a line comment (the only available in tinyconfig).
-- Everything in front of the # will be ignored until a new line is found or end of file.
+- Everything in front of the # will be ignored until a new line is found or an end of file.
 
 **Whitespaces:**
 - All whitespaces are ignored when reading the key, equal sign, and before reading a value.

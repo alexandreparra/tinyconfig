@@ -3,12 +3,11 @@
 // tinyconfig.
 
 /*
-    tinyconfig is a minimal, yet flexibility configuration file specification, that strives to solve
-    most common use cases. With only 4 public function and one struct, it can be used in many
-    scenarios, for example:
+    tinyconfig is a minimal, yet flexible configuration file specification, that strives to work for 
+    most common use cases. It can be used in many scenarios, for example:
       1. As a read only configuration file. You can put a comment above all key-value pairs to
-      describe what each line does, what values are accepted and its default value.
-      2. As a dynamic configuration file that can read and updated. For example, if you have a game
+      describe what each line does, what values are accepted and the default values.
+      2. As a dynamic configuration file that can be read and updated. For example, if you have a game
       that sets the window height and width by reading a file at initialization, and also provides
       settings so that the player change the resolution while playing, you can update the value at
       runtime and save everything back to the file. Notice that this removes all comments.
@@ -25,10 +24,10 @@ Lexer:
     Keys are case-sensitive, if you create two keys like the following: `SomeKey` and `somekey`
     tinyconfig is able to distinguish between them.
     
-    tinyconfig doesn't assume any types from the values, they are all treated as pure strings. This
-    has many advantages, for example, you can treat booleans just as a simple 't' and 'f' (like some
-    lisp flavors do). This also means that you need to bring your own methods of conversion for all
-    types you want to use.
+    tinyconfig doesn't assume any types from the values, they are all treated as null terminated 
+    strings. This has many advantages, for example, you can treat booleans just as a simple 't' and 
+    'f' (like some lisp flavors do). This also means that you need to bring your own methods of 
+    conversion for all types you want to use.
 
     Semicolons aren't sanitized, its highly advised that you don't blindly read values and issue
     commands on the terminal without prior sanitization. In general tinyconfig is optimal for simple
@@ -36,8 +35,8 @@ Lexer:
     flag, don't try to meta-program (at least not in a serious program) a config file.
 
 Memory model:
-    tinyconfig uses a static allocation to store values. It saves the whole line from the 
-    configuration file alongside a header:
+    tinyconfig uses a static allocation to store values, the total config size is know at compile
+    time. The configuration buffer saves each line from the file alongside a header:
 
     header            line
     |-----------------|-------------------------------------|
@@ -47,12 +46,14 @@ Memory model:
     offset (size_t)   configuration line (char *)
 
     The offset (stored in the header) represents the exact point in which the value starts, just
-    after the '=' sign in the line, this is saved so that we can access the value easily. Each line
-    is always null terminated meaning that you can print it in C with a simple printf("%s").
+    after the '=' sign in the line, this is saved so that we can access the value easily and modify
+    it using tc_set_value. Each line is always null terminated meaning that you can print it in C 
+    with a simple printf("%s").
 
 Hot reload:
-    You can easily achieve hot reload in tinyconfig by running tc_load_config again. Two simple
-    methods to implement hot reload are:
+    You can easily achieve hot reload in tinyconfig by running tc_load_config again, just provide
+    the same configuration file again to the function. Two simple methods to implement hot reload 
+    are:
       1. Check the file stat every time and use tc_load_config to reload once a file has changed.
       2. Create a custom command to reload the file on demand, for example, if you have something
       like a REPL or a debug GUI that calls tc_load_config again.
@@ -167,7 +168,7 @@ internal size_t string_trim_end(const char *source, size_t position)
 }
 
 //---------------------------------------------------------------------------
-// Allocation
+// Line/Header util
 //---------------------------------------------------------------------------
 
 internal void *line_get(tc_config *config, size_t index)
@@ -410,8 +411,10 @@ extern char *tc_get_value(tc_config *config, const char *key)
     return NULL;
 }
 
-/// Iterates config->buffer to find the key and assign it a new value
-/// if it doesn't overflow TC_LINE_MAX_SIZE. If the key doesn't exit, no value is updated.
+/// Iterates config->buffer to find the key and assign it a new value.
+/// If the new value overflows TC_LINE_MAX_SIZE or the provided key doesn't exist, NULL is
+/// returned to indicate failure. If the operation if successful a pointer to the value location
+/// is returned.
 extern char *tc_set_value(tc_config *config, char *key, char *new_value)
 {
     size_t new_value_length = strlen(new_value);
