@@ -8,11 +8,16 @@
 // This shows how tinyconfig saves each key-value pair.
 void print_config(tc_config *config) {
     for (size_t i = 0; i < config->size; i++) {
-        void *current_location = &config->buffer[TC_LINE_TOTAL_SIZE * i];
-        size_t *header_size = (size_t *) current_location;
-        printf("%zi ", *header_size);
-        char *line_location = (char *) current_location + TC_HEADER_SIZE;
-        printf("%s\n", line_location);
+        void *current_line = (char *) config->buffer + (TC_LINE_TOTAL_SIZE * i);
+
+        // Read the size_t at the beginning of the line.
+        void *key_start = (char *) current_line;
+        size_t *line_size = (size_t *) key_start;
+        printf("%zi ", *line_size);
+
+        // Read the rest of the line past the TC_HEADER_SIZE (which is just sizeof(size_t))
+        char *key_value = (char *) key_start + TC_HEADER_SIZE;
+        printf("%s\n", key_value);
     }
 }
 
@@ -40,23 +45,24 @@ int main() {
         return 1;
     }
 
-    // More unsafe way
-    char *player_power = tc_get_value(&config, "player_power");
-    printf("player_power: %i\n", atoi(player_power));
+    // Getting values from the config
+    char *server_ip = tc_get_value(&config, "server_ip");
+    printf("server_ip: %s\n", server_ip);
 
     // Safer
-    char *player_int = tc_get_value(&config, "base_attack");
-    if (player_int != NULL) {
-        printf("base_attack: %f\n", atof(player_int));
+    char *character_name = tc_get_value(&config, "character_name");
+    if (character_name != NULL) {
+        printf("character_name: %s\n", character_name);
     }
 
     // Negative values:
-    char *player_charisma = tc_get_value(&config, "player_charisma");
-    printf("player_charisma: %i kinda low...\n", atoi(player_charisma));
+    char *player_intelligence = tc_get_value(&config, "char_intelligence");
+    printf("char_intelligence: %i (kinda low...)\n", atoi(player_intelligence));
 
-    // Use helper functions to get ints
-    int player_pow = get_int(&config, "player_power", 0);
-    printf("player_power with helper function: %i\n", player_pow);
+    // An example helper functions to get an int from a value, where a default,
+    // fallback value can be provided.
+    int base_attack = get_int(&config, "base_attack", 0);
+    printf("base_attack with helper function: %i\n", base_attack);
 
     // You can print every value as they are all null terminated strings.
     char *player_destination = tc_get_value(&config, "player_destination");
@@ -66,11 +72,11 @@ int main() {
     bool parsed_bool = parse_boolean(boolean_example);
     // Do whatever with parsed_bool
 
-    // Set a value to a certain an already existing key.
-    // Even if the new value is created or just updated,
-    // tc_set_value will return the pointer to the value.
-    char *new_player_power = tc_set_value(&config, "player_power", "330");
-    printf("modified player_power: %i\n", atoi(new_player_power));
+    // Set a new value to a certain existing key. If the new value overflows TC_LINE_MAX_SIZE or the provided key
+    // to update doesn't exist, tc_set_value will return NULL. If the operation is successful a valid void * will
+    // be returned.
+    char *char_power = tc_set_value(&config, "char_power", "330");
+    printf("modified char_power: %i\n", atoi(char_power));
 
     // Save the modifications back to a file.
     tc_save_to_file(&config, "modified.conf");
