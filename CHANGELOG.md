@@ -1,3 +1,15 @@
+## 3.0.0
+- Removed the usage of malloc and realloc on the config, making all space used by it known at
+  compile time and static. This means that the config cannot grow infinitely anymore.
+- Removed all 2.x.x define macros in favor of TC_LINE_MAX_SIZE and TC_CONFIG_MAX_SIZE to determine 
+  the configuration size at compile time.
+- Removed numbers as keys.
+- Keys can now only be underscore `_` separated strings.
+- Removed string types surrounded by quotes "" for values, in favor of a raw string that accept
+  spaces inside of it, making strings like `192.168.0.100`, or `Some title text` valid.
+- Removed debug logs in favor of debug builds information on execution time and config space taken.
+- Changed internally how lines are stored.
+
 ## 2.0.4
 - Fixed debug logs spacing and phrasing for realloc log.
 - Added elapsed time info for `tc_load_config` function on DEBUG build.
