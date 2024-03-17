@@ -30,7 +30,7 @@ typedef struct {
 } tc_config;
 extern bool tc_load_config(tc_config *config, const char *file_path);
 extern char *tc_get_value(tc_config *config, const char *key_name);
-extern void *tc_set_value(tc_config *config, char *key, char *new_value);
+extern char *tc_set_value(tc_config *config, char *key, char *new_value);
 extern bool tc_save_to_file(tc_config *config, const char *file_path);
 
 #ifdef __cplusplus
