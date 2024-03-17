@@ -91,10 +91,10 @@ Hot reload:
 	#define TC_FTELL ftell
 #endif
 
-#define ERROR_REPORT(string, args...) fprintf(        \
+#define ERROR_REPORT(string, ...) fprintf(        \
         stderr,                                       \
         "\033[0;31m tinyconfig: " string "\033[0m\n", \
-        args)
+        __VA_ARGS__)
 
 //---------------------------------------------------------------------------
 // Util
@@ -173,7 +173,8 @@ internal size_t string_trim_end(const char *source, size_t position)
 internal void *line_get(tc_config *config, size_t index)
 {
     assert(index < TC_CONFIG_MAX_SIZE);
-    return &config->buffer[TC_LINE_TOTAL_SIZE * index];
+    void *ptr = (char *) config->buffer + (TC_LINE_TOTAL_SIZE * index);
+    return ptr;
 }
 
 internal size_t line_offset_get(tc_config *config, size_t index)
@@ -411,7 +412,7 @@ extern char *tc_get_value(tc_config *config, const char *key)
 
 /// Iterates config->buffer to find the key and assign it a new value
 /// if it doesn't overflow TC_LINE_MAX_SIZE. If the key doesn't exit, no value is updated.
-extern void *tc_set_value(tc_config *config, char *key, char *new_value)
+extern char *tc_set_value(tc_config *config, char *key, char *new_value)
 {
     size_t new_value_length = strlen(new_value);
     assert(new_value_length > 0);
