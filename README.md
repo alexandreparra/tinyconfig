@@ -76,8 +76,9 @@ improper numeric type.
 Each key-value pair is evaluated by line, one line means one key and one value, the delimiter to 
 define what is a key and what is a value, is the equal sign '='.
 
-**Keys** can be underscore separated strings like: `some_key`, or normal non-spaced strings like:
-`SomeKey`. Keys are **case-sensitive**.
+**Keys** can be underscore separated strings like: `some_key`, normal non-spaced strings like:
+`SomeKey`, or just an integer like: `1`. Notice that keys are **case-sensitive**, so a key `someKey` 
+is different from `SomeKey`.
 
 **Values** can start with any alphanumeric character, dot '.', or hyphen '-', some examples:
 - Integers: `1`, `100`, `-5`.

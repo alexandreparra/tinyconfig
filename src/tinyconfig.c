@@ -1,6 +1,6 @@
 // Copyright 2023-2024 Alexandre Parra
 // MIT License
-// tinyconfig.
+// tinyconfig 3.0.0
 
 /*
     tinyconfig is a minimal, yet flexible configuration file specification, that strives to work for 
@@ -17,7 +17,7 @@
 Lexer:
     tinyconfig has a simple lexer that understands:
     - Line comments.
-    - Keys that can be string separated by an underscore
+    - Keys that can be strings optionally separated by an underscore or integers.
     - Values that can be any valid string type, containing whitespaces or not, numbers and special
       characters too.
 
@@ -245,7 +245,7 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
                         if (c == '\r' || c == '\n' || c == '\0' || c == '#') break;
                         pos++;
                     }
-                }
+                } 
                 else
                 {
                     ERROR_REPORT("Invalid initial value character: %c at line %zi",
@@ -286,6 +286,10 @@ internal bool tc_parse_config(tc_config *config, char *file_buffer, size_t file_
                 if (isalpha(c))
                 {
                     while (isalpha((c = file_buffer[pos+1])) || c == '_') pos++;
+                }
+                else if (isdigit(c)) 
+                {
+                    while (isdigit(c = file_buffer[pos+1])) pos++;
                 }
                 else
                 {

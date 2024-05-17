@@ -72,9 +72,13 @@ int main() {
     bool parsed_bool = parse_boolean(boolean_example);
     // Do whatever with parsed_bool
 
-    // Set a new value to a certain existing key. If the new value overflows TC_LINE_MAX_SIZE or the provided key
-    // to update doesn't exist, tc_set_value will return NULL. If the operation is successful a valid void * will
-    // be returned.
+    // Numbers as keys
+    char *one = tc_get_value(&config, "1");
+    printf("Value from key 1: %s\n", one);
+
+    // Set a new value to a certain existing key. If the new value overflows TC_LINE_MAX_SIZE or 
+    // the provided key to update doesn't exist, tc_set_value will return NULL. If the operation is 
+    // successful a valid void * will be returned.
     char *char_power = tc_set_value(&config, "char_power", "330");
     printf("modified char_power: %i\n", atoi(char_power));
 
