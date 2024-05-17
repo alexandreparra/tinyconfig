@@ -19,13 +19,13 @@ void test_config_values(tc_config *config) {
     const char *number_of_macros = tc_get_value(config, "numberOfMacros");
     TEST("Integer", STRING_COMPARE(number_of_macros, "2"));
 
-    const char * program_safety = tc_get_value(config, "programsafety");
+    const char *program_safety = tc_get_value(config, "programsafety");
     TEST("One word string", STRING_COMPARE(program_safety, "unsafe"));
 
-    const char * time_to_run = tc_get_value(config, "time_to_run");
+    const char *time_to_run = tc_get_value(config, "time_to_run");
     TEST("Dotted float", STRING_COMPARE(time_to_run, ".1"));
 
-    const char * random_float = tc_get_value(config, "random_float");
+    const char *random_float = tc_get_value(config, "random_float");
     TEST("Float number", STRING_COMPARE(random_float, "5.56"));
 
     const char *code_quality = tc_get_value(config, "code_quality");
