@@ -50,6 +50,9 @@ Memory model:
     it using tc_set_value. Each line is always null terminated meaning that you can print it in C 
     with a simple printf("%s").
 
+    To guarantee memory alignment, set the macro TC_LINE_MAX_SIZE to a power of two. By default it
+    is set to 64, which would result in the correct aligment for most 32 and 64 bit processors.
+
 Hot reload:
     You can easily achieve hot reload in tinyconfig by running tc_load_config again, just provide
     the same configuration file again to the function. Two simple methods to implement hot reload 

@@ -62,6 +62,9 @@ The available flags are:
 | TC_LINE_MAX_SIZE   | The maximum line buffer size used to store the key-value pair from the configuration file |
 | TC_CONFIG_MAX_SIZE | The maximum lines that can be stored in the configuration file                            |
 
+When setting a different `TC_LINE_MAX_SIZE`, prefer setting the numbers to **powers of two**, so 
+that it can be correctly aligned in memory.
+
 ### Caveats
 When using the function `tc_save_to_file`, all the comments and spaces present on the original file 
 will vanish, as they are naturally ignored by the lexer (described at [Lexer rules](#Lexer)).
